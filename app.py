@@ -1,46 +1,59 @@
 import streamlit as st
-from openai import OpenAI
+from huggingface_hub import InferenceClient
 
 st.set_page_config(
     page_title="ÖmerGPT",
-    page_icon="🤖",
-    layout="centered"
+    page_icon="🤖"
 )
 
 st.title("🤖 ÖmerGPT")
-st.caption("Zekice cevap veren yapay zekâ asistanı")
+st.write("Merhaba 😄 Ben ÖmerGPT")
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+client = InferenceClient(
+    provider="hf-inference",
+    api_key=st.secrets["HF_TOKEN"]
+)
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+if "chat" not in st.session_state:
+    st.session_state.chat = []
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
+for mesaj in st.session_state.chat:
+    with st.chat_message(mesaj["role"]):
+        st.write(mesaj["content"])
 
-soru = st.chat_input("ÖmerGPT'ye bir şey sor...")
+soru = st.chat_input("Bir şey sor...")
 
 if soru:
-    st.session_state.messages.append({"role": "user", "content": soru})
+
+    st.session_state.chat.append({
+        "role": "user",
+        "content": soru
+    })
 
     with st.chat_message("user"):
         st.write(soru)
 
     with st.chat_message("assistant"):
+
         with st.spinner("ÖmerGPT düşünüyor..."):
-            response = client.responses.create(
-                model="gpt-4.1-mini",
-                instructions="""
-                Senin adın ÖmerGPT.
-                Türkçe konuşan, zeki, açıklayıcı ve yardımsever bir asistansın.
-                Eğitim, matematik, teknoloji, kodlama ve günlük sorularda destek olursun.
-                Cevapların anlaşılır, düzenli ve gereksiz uzun olmayan biçimde olmalı.
-                """,
-                input=soru
+
+            cevap = client.chat.completions.create(
+                model="Qwen/Qwen2.5-7B-Instruct",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Senin adın ÖmerGPT. Türkçe konuşan yardımsever bir asistansın."
+                    },
+                    *st.session_state.chat
+                ],
+                max_tokens=500
             )
 
-            cevap = response.output_text
-            st.write(cevap)
+            yanit = cevap.choices[0].message.content
 
-    st.session_state.messages.append({"role": "assistant", "content": cevap})
+            st.write(yanit)
+
+    st.session_state.chat.append({
+        "role": "assistant",
+        "content": yanit
+    })
