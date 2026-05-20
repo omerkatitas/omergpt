@@ -27,7 +27,7 @@ if soru:
         with st.spinner("ÖmerGPT düşünüyor..."):
             try:
                 response = client.chat.completions.create(
-                    model="mistralai/Mistral-7B-Instruct-v0.3",
+                    model="HuggingFaceH4/zephyr-7b-beta",
                     messages=[
                         {
                             "role": "system",
